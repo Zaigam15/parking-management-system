@@ -1,0 +1,285 @@
+.reports-page {
+  padding: 1.5rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+
+  h1 {
+    font-size: 1.8rem;
+    color: #1a237e;
+    margin: 0;
+  }
+
+  p {
+    color: #666;
+    margin: 0.25rem 0 0;
+  }
+}
+
+.btn-print {
+  background: #fff;
+  color: #333;
+  border: 1px solid #ddd;
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+
+  &:hover {
+    background: #f5f5f5;
+  }
+}
+
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.stat-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.2rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+
+  .stat-icon {
+    font-size: 2rem;
+  }
+
+  .stat-val {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1a237e;
+  }
+
+  .stat-lbl {
+    font-size: 0.8rem;
+    color: #888;
+    margin-top: 2px;
+  }
+}
+
+.revenue-section {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+
+  h2 {
+    margin: 0 0 1rem;
+    color: #333;
+    font-size: 1.1rem;
+  }
+}
+
+.type-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.type-card {
+  background: #f5f5f5;
+  border-radius: 10px;
+  padding: 1rem 1.5rem;
+  text-align: center;
+  min-width: 130px;
+
+  .type-icon {
+    font-size: 2rem;
+    margin-bottom: 0.4rem;
+  }
+
+  .type-name {
+    font-weight: 600;
+    color: #333;
+  }
+
+  .type-revenue {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #1976d2;
+    margin: 0.25rem 0;
+  }
+
+  .type-count {
+    font-size: 0.8rem;
+    color: #888;
+  }
+}
+
+.filters-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  margin-bottom: 1rem;
+
+  .search-input {
+    flex: 1;
+    min-width: 200px;
+    padding: 0.55rem 0.9rem;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 0.9rem;
+  }
+
+  select,
+  .date-input {
+    padding: 0.55rem 0.9rem;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    background: #fff;
+  }
+
+  .btn-clear {
+    background: #ffebee;
+    color: #c62828;
+    border: none;
+    padding: 0.55rem 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.9rem;
+  }
+
+  .count-badge {
+    background: #e3f2fd;
+    color: #1565c0;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+}
+
+.table-card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+
+  th {
+    background: #f5f5f5;
+    padding: 0.75rem 1rem;
+    text-align: left;
+    font-size: 0.82rem;
+    color: #555;
+    border-bottom: 2px solid #e0e0e0;
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 0.7rem 1rem;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 0.88rem;
+    white-space: nowrap;
+  }
+
+  tr:hover td {
+    background: #fafafa;
+  }
+
+  .row-num {
+    color: #aaa;
+    font-size: 0.8rem;
+  }
+
+  .charge {
+    color: #2e7d32;
+    font-weight: 700;
+  }
+
+  .no-data {
+    text-align: center;
+    padding: 3rem;
+  }
+}
+
+.empty-state {
+  text-align: center;
+
+  .empty-icon {
+    font-size: 3rem;
+    margin-bottom: 0.5rem;
+  }
+
+  p {
+    color: #666;
+    margin: 0.5rem 0 0.25rem;
+    font-size: 1rem;
+  }
+
+  small {
+    color: #aaa;
+    font-size: 0.85rem;
+  }
+}
+
+.plate {
+  background: #1a237e;
+  color: #fff;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 0.85rem;
+}
+
+.badge {
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+
+  &.car {
+    background: #e3f2fd;
+    color: #1565c0;
+  }
+
+  &.bike {
+    background: #f3e5f5;
+    color: #6a1b9a;
+  }
+
+  &.truck {
+    background: #fff3e0;
+    color: #bf360c;
+  }
+
+  &.bus {
+    background: #e8f5e9;
+    color: #1b5e20;
+  }
+}
+
+@media print {
+
+  .btn-print,
+  .filters-bar {
+    display: none;
+  }
+
+  .reports-page {
+    padding: 0;
+  }
+}

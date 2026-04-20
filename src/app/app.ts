@@ -1,12 +1,19 @@
 import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { NavbarComponent } from './shared/navbar/navbar.component';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet],
+  standalone: true,
+  imports: [RouterOutlet, NavbarComponent],
   templateUrl: './app.html',
-  styleUrl: './app.scss'
+  styles: [`
+    .main-content {
+      min-height: calc(100vh - 65px);
+      background: #f0f2f5;
+    }
+  `]
 })
 export class App {
-  protected title = 'my-project';
+  title = 'parking-management-system';
 }

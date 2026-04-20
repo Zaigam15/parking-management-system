@@ -1,0 +1,122 @@
+<div class="dashboard">
+  <div class="page-header">
+    <h1>📊 Dashboard</h1>
+    <p>Real-time parking overview</p>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="stats-grid" *ngIf="stats">
+    <div class="stat-card blue">
+      <div class="stat-icon">🏢</div>
+      <div class="stat-info">
+        <div class="stat-value">{{ stats.totalSlots }}</div>
+        <div class="stat-label">Total Slots</div>
+      </div>
+    </div>
+    <div class="stat-card green">
+      <div class="stat-icon">✅</div>
+      <div class="stat-info">
+        <div class="stat-value">{{ stats.availableSlots }}</div>
+        <div class="stat-label">Available</div>
+      </div>
+    </div>
+    <div class="stat-card red">
+      <div class="stat-icon">🚗</div>
+      <div class="stat-info">
+        <div class="stat-value">{{ stats.occupiedSlots }}</div>
+        <div class="stat-label">Occupied</div>
+      </div>
+    </div>
+    <div class="stat-card orange">
+      <div class="stat-icon">💰</div>
+      <div class="stat-info">
+        <div class="stat-value">₹{{ stats.todayRevenue }}</div>
+        <div class="stat-label">Today's Revenue</div>
+      </div>
+    </div>
+    <div class="stat-card purple">
+      <div class="stat-icon">🚘</div>
+      <div class="stat-info">
+        <div class="stat-value">{{ stats.activeVehicles }}</div>
+        <div class="stat-label">Active Vehicles</div>
+      </div>
+    </div>
+    <div class="stat-card teal">
+      <div class="stat-icon">📈</div>
+      <div class="stat-info">
+        <div class="stat-value">{{ getOccupancyPercent() }}%</div>
+        <div class="stat-label">Occupancy Rate</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Occupancy Bar -->
+  <div class="occupancy-section">
+    <h2>Occupancy Overview</h2>
+    <div class="occupancy-bar">
+      <div class="bar-fill" [style.width.%]="getOccupancyPercent()" [class.low]="getOccupancyPercent()<50"
+        [class.medium]="getOccupancyPercent()>=50 && getOccupancyPercent()<80" [class.high]="getOccupancyPercent()>=80">
+        <span>{{ getOccupancyPercent() }}%</span>
+      </div>
+    </div>
+    <div class="bar-legend">
+      <span class="legend-item available">■ Available ({{ stats.availableSlots }})</span>
+      <span class="legend-item occupied">■ Occupied ({{ stats.occupiedSlots }})</span>
+    </div>
+  </div>
+
+  <!-- Slot Map by Floor -->
+  <div class="slot-map-section">
+    <h2>Parking Slot Map</h2>
+    <div class="floor-group" *ngFor="let floorData of getSlotsByFloor()">
+      <h3>{{ floorData.floor }}</h3>
+      <div class="slots-grid">
+        <div class="slot-cell" *ngFor="let slot of floorData.slots" [class]="slot.status"
+          [title]="slot.slotNumber + ' - ' + slot.type + ' - ' + slot.status">
+          <span class="slot-num">{{ slot.slotNumber }}</span>
+          <span class="slot-type-icon">{{ slot.type === 'Car' ? '🚗' : slot.type === 'Bike' ? '🏍' : slot.type ===
+            'Truck' ? '🚛' : '🚌' }}</span>
+        </div>
+      </div>
+    </div>
+    <div class="map-legend">
+      <span class="leg available">■ Available</span>
+      <span class="leg occupied">■ Occupied</span>
+      <span class="leg reserved">■ Reserved</span>
+      <span class="leg maintenance">■ Maintenance</span>
+    </div>
+  </div>
+
+  <!-- Currently Parked -->
+  <div class="recent-section">
+    <div class="section-header">
+      <h2>Currently Parked Vehicles</h2>
+      <a routerLink="/vehicles" class="view-all">View All →</a>
+    </div>
+    <div class="table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Plate Number</th>
+            <th>Owner</th>
+            <th>Type</th>
+            <th>Slot</th>
+            <th>Duration</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let v of recentVehicles">
+            <td><span class="plate">{{ v.plateNumber }}</span></td>
+            <td>{{ v.ownerName }}</td>
+            <td><span class="badge" [class]="v.vehicleType.toLowerCase()">{{ v.vehicleType }}</span></td>
+            <td>{{ v.slotId }}</td>
+            <td class="duration">{{ getDuration(v.entryTime!) }}</td>
+          </tr>
+          <tr *ngIf="recentVehicles.length === 0">
+            <td colspan="5" class="no-data">No vehicles currently parked</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

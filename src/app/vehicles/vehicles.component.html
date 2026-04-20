@@ -1,0 +1,140 @@
+<div class="vehicles-page">
+  <div class="page-header">
+    <div>
+      <h1>🚗 Vehicle Management</h1>
+      <p>Manage all parked vehicles</p>
+    </div>
+    <button class="btn-primary" (click)="openAddModal()">+ Add Vehicle</button>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters-bar">
+    <input class="search-input" type="text" placeholder="🔍 Search by plate or owner..." [(ngModel)]="searchTerm"
+      (input)="applyFilters()">
+    <select [(ngModel)]="filterStatus" (change)="applyFilters()">
+      <option value="all">All Status</option>
+      <option value="parked">Parked</option>
+      <option value="exited">Exited</option>
+    </select>
+    <select [(ngModel)]="filterType" (change)="applyFilters()">
+      <option value="all">All Types</option>
+      <option value="Car">Car</option>
+      <option value="Bike">Bike</option>
+      <option value="Truck">Truck</option>
+      <option value="Bus">Bus</option>
+    </select>
+    <span class="count-badge">{{ filteredVehicles.length }} records</span>
+  </div>
+
+  <!-- Table -->
+  <div class="table-card">
+    <div class="table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Plate Number</th>
+            <th>Owner Name</th>
+            <th>Type</th>
+            <th>Contact</th>
+            <th>Entry Time</th>
+            <th>Duration</th>
+            <th>Slot</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let v of filteredVehicles; let i = index">
+            <td class="row-num">{{ i + 1 }}</td>
+            <td><span class="plate">{{ v.plateNumber }}</span></td>
+            <td>{{ v.ownerName }}</td>
+            <td><span class="badge" [class]="v.vehicleType.toLowerCase()">{{ v.vehicleType }}</span></td>
+            <td>{{ v.contactNumber }}</td>
+            <td>{{ v.entryTime ? (v.entryTime | date:'dd MMM, h:mm a') : '-' }}</td>
+            <td>{{ v.status === 'parked' && v.entryTime ? getDuration(v.entryTime) : '-' }}</td>
+            <td>{{ v.slotId || '-' }}</td>
+            <td>
+              <span class="status-badge" [class.parked]="v.status==='parked'" [class.exited]="v.status==='exited'">
+                {{ v.status === 'parked' ? '🟢 Parked' : '🔴 Exited' }}
+              </span>
+            </td>
+            <td class="actions">
+              <button class="btn-checkout" *ngIf="v.status==='parked'" (click)="openCheckout(v)">Checkout</button>
+              <button class="btn-delete" (click)="deleteVehicle(v.id)">🗑</button>
+            </td>
+          </tr>
+          <tr *ngIf="filteredVehicles.length === 0">
+            <td colspan="10" class="no-data">No vehicles found</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Add Vehicle Modal -->
+  <div class="modal-overlay" *ngIf="showModal" (click)="showModal=false">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Add New Vehicle</h2>
+        <button class="close-btn" (click)="showModal=false">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Plate Number *</label>
+          <input type="text" [(ngModel)]="newVehicle.plateNumber" placeholder="e.g. UP32AB1234" class="form-input">
+        </div>
+        <div class="form-group">
+          <label>Owner Name *</label>
+          <input type="text" [(ngModel)]="newVehicle.ownerName" placeholder="Full name" class="form-input">
+        </div>
+        <div class="form-group">
+          <label>Vehicle Type</label>
+          <select [(ngModel)]="newVehicle.vehicleType" class="form-input">
+            <option>Car</option>
+            <option>Bike</option>
+            <option>Truck</option>
+            <option>Bus</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Contact Number</label>
+          <input type="text" [(ngModel)]="newVehicle.contactNumber" placeholder="10-digit mobile" class="form-input">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="showModal=false">Cancel</button>
+        <button class="btn-primary" (click)="addVehicle()">Add Vehicle</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Checkout Modal -->
+  <div class="modal-overlay" *ngIf="showCheckoutModal" (click)="showCheckoutModal=false">
+    <div class="modal checkout-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Vehicle Checkout</h2>
+        <button class="close-btn" (click)="showCheckoutModal=false">✕</button>
+      </div>
+      <div class="modal-body" *ngIf="selectedVehicle">
+        <div class="checkout-info">
+          <div class="info-row"><span>Plate</span><strong class="plate">{{ selectedVehicle.plateNumber }}</strong></div>
+          <div class="info-row"><span>Owner</span><strong>{{ selectedVehicle.ownerName }}</strong></div>
+          <div class="info-row"><span>Type</span><strong>{{ selectedVehicle.vehicleType }}</strong></div>
+          <div class="info-row"><span>Entry Time</span><strong>{{ selectedVehicle.entryTime | date:'dd MMM, h:mm a'
+              }}</strong></div>
+          <div class="info-row"><span>Duration</span><strong>{{ getDuration(selectedVehicle.entryTime!) }}</strong>
+          </div>
+          <div class="info-row charge-row"><span>Total Charge</span><strong>₹{{ checkoutCharge }}</strong></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="showCheckoutModal=false">Cancel</button>
+        <button class="btn-primary" (click)="confirmCheckout()">Confirm Checkout</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" *ngIf="toast">{{ toast }}</div>
+</div>

@@ -1,0 +1,110 @@
+<div class="reports-page">
+  <div class="page-header">
+    <div>
+      <h1>📋 Reports</h1>
+      <p>Parking history and revenue analytics</p>
+    </div>
+    <button class="btn-print" (click)="printReport()">🖨 Print Report</button>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-icon">💰</div>
+      <div class="stat-detail">
+        <div class="stat-val">₹{{ totalRevenue }}</div>
+        <div class="stat-lbl">Total Revenue</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">🚗</div>
+      <div class="stat-detail">
+        <div class="stat-val">{{ totalVehicles }}</div>
+        <div class="stat-lbl">Total Checkouts</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">⏱</div>
+      <div class="stat-detail">
+        <div class="stat-val">{{ formatDuration(avgDuration) }}</div>
+        <div class="stat-lbl">Avg Duration</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">🏆</div>
+      <div class="stat-detail">
+        <div class="stat-val">₹{{ maxRevenue }}</div>
+        <div class="stat-lbl">Max Single Charge</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="revenue-section" *ngIf="getTypeRevenue().length > 0">
+    <h2>Revenue by Vehicle Type</h2>
+    <div class="type-cards">
+      <div class="type-card" *ngFor="let t of getTypeRevenue()">
+        <div class="type-icon">{{ t.type === 'Car' ? '🚗' : t.type === 'Bike' ? '🏍' : t.type === 'Truck' ? '🚛' : '🚌'
+          }}</div>
+        <div class="type-name">{{ t.type }}</div>
+        <div class="type-revenue">₹{{ t.revenue }}</div>
+        <div class="type-count">{{ t.count }} vehicle{{ t.count > 1 ? 's' : '' }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="filters-bar">
+    <input class="search-input" type="text" placeholder="🔍 Search plate / owner..." [(ngModel)]="searchTerm"
+      (input)="applyFilters()">
+    <select [(ngModel)]="filterType" (change)="applyFilters()">
+      <option value="all">All Types</option>
+      <option value="Car">Car</option>
+      <option value="Bike">Bike</option>
+      <option value="Truck">Truck</option>
+      <option value="Bus">Bus</option>
+    </select>
+    <input type="date" [(ngModel)]="filterDate" (change)="applyFilters()" class="date-input">
+    <button class="btn-clear" (click)="clearFilters()">✕ Clear</button>
+    <span class="count-badge">{{ filteredRecords.length }} records</span>
+  </div>
+
+  <div class="table-card">
+    <div class="table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Plate Number</th>
+            <th>Owner Name</th>
+            <th>Type</th>
+            <th>Slot</th>
+            <th>Entry Time</th>
+            <th>Exit Time</th>
+            <th>Duration</th>
+            <th>Charge</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let r of filteredRecords; let i = index">
+            <td class="row-num">{{ i + 1 }}</td>
+            <td><span class="plate">{{ r.plateNumber }}</span></td>
+            <td>{{ r.ownerName }}</td>
+            <td><span class="badge" [class]="r.vehicleType.toLowerCase()">{{ r.vehicleType }}</span></td>
+            <td>{{ r.slotNumber }}</td>
+            <td>{{ r.entryTime | date:'dd MMM yy, h:mm a' }}</td>
+            <td>{{ r.exitTime ? (r.exitTime | date:'dd MMM yy, h:mm a') : '-' }}</td>
+            <td>{{ r.duration ? formatDuration(r.duration) : '-' }}</td>
+            <td class="charge">{{ r.charge ? '₹' + r.charge : '-' }}</td>
+          </tr>
+          <tr *ngIf="filteredRecords.length === 0">
+            <td colspan="9" class="no-data">
+              <div class="empty-state">
+                <div class="empty-icon">📭</div>
+                <p>No records found</p>
+                <small>Checkout vehicles to generate reports</small>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

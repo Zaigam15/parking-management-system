@@ -1,0 +1,120 @@
+<div class="slots-page">
+  <div class="page-header">
+    <div>
+      <h1>🏢 Parking Slots</h1>
+      <p>Monitor and manage all parking spaces</p>
+    </div>
+    <div class="view-toggle">
+      <button [class.active]="viewMode==='grid'" (click)="viewMode='grid'">⊞ Grid</button>
+      <button [class.active]="viewMode==='table'" (click)="viewMode='table'">☰ Table</button>
+    </div>
+  </div>
+
+  <!-- Summary -->
+  <div class="summary-row">
+    <div class="summary-card available">
+      <span class="s-num">{{ getCount('available') }}</span>
+      <span class="s-label">Available</span>
+    </div>
+    <div class="summary-card occupied">
+      <span class="s-num">{{ getCount('occupied') }}</span>
+      <span class="s-label">Occupied</span>
+    </div>
+    <div class="summary-card reserved">
+      <span class="s-num">{{ getCount('reserved') }}</span>
+      <span class="s-label">Reserved</span>
+    </div>
+    <div class="summary-card maintenance">
+      <span class="s-num">{{ getCount('maintenance') }}</span>
+      <span class="s-label">Maintenance</span>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters-bar">
+    <select [(ngModel)]="filterStatus" (change)="applyFilters()">
+      <option value="all">All Status</option>
+      <option value="available">Available</option>
+      <option value="occupied">Occupied</option>
+      <option value="reserved">Reserved</option>
+      <option value="maintenance">Maintenance</option>
+    </select>
+    <select [(ngModel)]="filterType" (change)="applyFilters()">
+      <option value="all">All Types</option>
+      <option value="Car">Car</option>
+      <option value="Bike">Bike</option>
+      <option value="Truck">Truck</option>
+      <option value="Bus">Bus</option>
+    </select>
+    <span class="count-badge">{{ filteredSlots.length }} slots</span>
+  </div>
+
+  <!-- Grid View -->
+  <ng-container *ngIf="viewMode==='grid'">
+    <div class="floor-section" *ngFor="let floorData of getByFloor()">
+      <h3 class="floor-title">{{ floorData.floor }}</h3>
+      <div class="slots-grid">
+        <div class="slot-card" *ngFor="let slot of floorData.slots" [class]="slot.status">
+          <div class="slot-header">
+            <span class="slot-num">{{ slot.slotNumber }}</span>
+            <span class="slot-icon">{{ getTypeIcon(slot.type) }}</span>
+          </div>
+          <div class="slot-type">{{ slot.type }}</div>
+          <div class="slot-status-label">{{ slot.status }}</div>
+          <div class="slot-actions" *ngIf="slot.status !== 'occupied'">
+            <select class="status-select" [value]="slot.status"
+              (change)="setStatus(slot.id, $any($event.target).value)">
+              <option value="available">Available</option>
+              <option value="reserved">Reserved</option>
+              <option value="maintenance">Maintenance</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- Table View -->
+  <div class="table-card" *ngIf="viewMode==='table'">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Slot Number</th>
+          <th>Floor</th>
+          <th>Type</th>
+          <th>Status</th>
+          <th>Vehicle ID</th>
+          <th>Change Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let slot of filteredSlots">
+          <td><strong>{{ slot.slotNumber }}</strong></td>
+          <td>{{ slot.floor }}</td>
+          <td>{{ getTypeIcon(slot.type) }} {{ slot.type }}</td>
+          <td><span class="status-pill" [class]="slot.status">{{ slot.status }}</span></td>
+          <td>{{ slot.vehicleId || '-' }}</td>
+          <td>
+            <select *ngIf="slot.status !== 'occupied'" class="status-select" [value]="slot.status"
+              (change)="setStatus(slot.id, $any($event.target).value)">
+              <option value="available">Available</option>
+              <option value="reserved">Reserved</option>
+              <option value="maintenance">Maintenance</option>
+            </select>
+            <span *ngIf="slot.status === 'occupied'" class="occupied-text">In Use</span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Legend -->
+  <div class="legend">
+    <span class="leg available">■ Available</span>
+    <span class="leg occupied">■ Occupied</span>
+    <span class="leg reserved">■ Reserved</span>
+    <span class="leg maintenance">■ Maintenance</span>
+  </div>
+
+  <div class="toast" *ngIf="toast">{{ toast }}</div>
+</div>
