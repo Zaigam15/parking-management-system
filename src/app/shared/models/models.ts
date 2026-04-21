@@ -1,3 +1,5 @@
+
+
 export interface Vehicle {
   id: string;
   plateNumber: string;
@@ -29,7 +31,7 @@ export interface ParkingRecord {
   slotNumber: string;
   entryTime: Date;
   exitTime?: Date;
-  duration?: number; // in minutes
+  duration?: number; // minutes mein
   charge?: number;
 }
 

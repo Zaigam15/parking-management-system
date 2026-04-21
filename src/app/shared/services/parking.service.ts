@@ -1,99 +1,207 @@
-import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
-import { Vehicle, ParkingSlot, ParkingRecord, DashboardStats } from '../models/models';
+import { Injectable, signal, computed, effect } from '@angular/core';
+import { Vehicle, ParkingSlot, ParkingRecord } from '../models/models';
 
 @Injectable({ providedIn: 'root' })
 export class ParkingService {
-  private vehicles: Vehicle[] = [
-    { id: 'v1', plateNumber: 'UP32AB1234', ownerName: 'Ramesh Kumar', vehicleType: 'Car', contactNumber: '9876543210', entryTime: new Date(Date.now() - 7200000), slotId: 's1', status: 'parked' },
-    { id: 'v2', plateNumber: 'DL01CD5678', ownerName: 'Priya Singh', vehicleType: 'Bike', contactNumber: '8765432109', entryTime: new Date(Date.now() - 3600000), slotId: 's5', status: 'parked' },
-    { id: 'v3', plateNumber: 'MH02EF9012', ownerName: 'Suresh Patel', vehicleType: 'Car', contactNumber: '7654321098', entryTime: new Date(Date.now() - 1800000), slotId: 's2', status: 'parked' },
-    { id: 'v4', plateNumber: 'UP70GH3456', ownerName: 'Anita Sharma', vehicleType: 'Truck', contactNumber: '6543210987', entryTime: new Date(Date.now() - 5400000), slotId: 's9', status: 'parked' },
-    { id: 'v5', plateNumber: 'RJ14IJ7890', ownerName: 'Vikram Gupta', vehicleType: 'Car', contactNumber: '9012345678', exitTime: new Date(Date.now() - 900000), status: 'exited' },
-  ];
 
-  private slots: ParkingSlot[] = [
-    { id: 's1', slotNumber: 'A-01', floor: 'Ground', type: 'Car', status: 'occupied', vehicleId: 'v1' },
-    { id: 's2', slotNumber: 'A-02', floor: 'Ground', type: 'Car', status: 'occupied', vehicleId: 'v3' },
-    { id: 's3', slotNumber: 'A-03', floor: 'Ground', type: 'Car', status: 'available' },
-    { id: 's4', slotNumber: 'A-04', floor: 'Ground', type: 'Car', status: 'reserved' },
-    { id: 's5', slotNumber: 'B-01', floor: 'Ground', type: 'Bike', status: 'occupied', vehicleId: 'v2' },
-    { id: 's6', slotNumber: 'B-02', floor: 'Ground', type: 'Bike', status: 'available' },
-    { id: 's7', slotNumber: 'B-03', floor: 'Ground', type: 'Bike', status: 'maintenance' },
-    { id: 's8', slotNumber: 'C-01', floor: '1st Floor', type: 'Car', status: 'available' },
-    { id: 's9', slotNumber: 'D-01', floor: 'Ground', type: 'Truck', status: 'occupied', vehicleId: 'v4' },
-    { id: 's10', slotNumber: 'D-02', floor: 'Ground', type: 'Truck', status: 'available' },
-    { id: 's11', slotNumber: 'C-02', floor: '1st Floor', type: 'Car', status: 'available' },
-    { id: 's12', slotNumber: 'C-03', floor: '1st Floor', type: 'Car', status: 'available' },
-  ];
+  // ✅ STATE
+  vehicles = signal<Vehicle[]>([]);
+  slots = signal<ParkingSlot[]>([]);
+  records = signal<ParkingRecord[]>([]);
 
-  private records: ParkingRecord[] = [
-    { id: 'r1', vehicleId: 'v5', slotId: 's3', plateNumber: 'RJ14IJ7890', ownerName: 'Vikram Gupta', vehicleType: 'Car', slotNumber: 'A-03', entryTime: new Date(Date.now() - 10800000), exitTime: new Date(Date.now() - 900000), duration: 165, charge: 165 },
-  ];
+  // ✅ STATS (MAIN DASHBOARD)
+  stats = computed(() => {
+    const slots = this.slots();
+    const vehicles = this.vehicles();
+    const records = this.records();
 
-  private readonly RATE_PER_HOUR: Record<string, number> = { Car: 50, Bike: 20, Truck: 100, Bus: 80 };
+    const total = slots.length;
+    const available = slots.filter(s => s.status === 'available').length;
+    const occupied = slots.filter(s => s.status === 'occupied').length;
 
-  private vehiclesSubject = new BehaviorSubject<Vehicle[]>(this.vehicles);
-  private slotsSubject = new BehaviorSubject<ParkingSlot[]>(this.slots);
-  private recordsSubject = new BehaviorSubject<ParkingRecord[]>(this.records);
+    const todayRevenue = records.reduce((sum, r) => sum + Number(r.charge || 0), 0);
 
-  getVehicles(): Observable<Vehicle[]> { return this.vehiclesSubject.asObservable(); }
-  getSlots(): Observable<ParkingSlot[]> { return this.slotsSubject.asObservable(); }
-  getRecords(): Observable<ParkingRecord[]> { return this.recordsSubject.asObservable(); }
+    return {
+      totalSlots: total,
+      availableSlots: available,
+      occupiedSlots: occupied,
+      todayRevenue,
+      totalVehicles: vehicles.length,
+      activeVehicles: vehicles.filter(v => v.status === 'parked').length
+    };
+  });
 
-  getStats(): DashboardStats {
-    const total = this.slots.length;
-    const available = this.slots.filter(s => s.status === 'available').length;
-    const occupied = this.slots.filter(s => s.status === 'occupied').length;
-    const todayRevenue = this.records.filter(r => r.exitTime && this.isToday(r.exitTime)).reduce((sum, r) => sum + (r.charge || 0), 0);
-    return { totalSlots: total, availableSlots: available, occupiedSlots: occupied, todayRevenue, totalVehicles: this.vehicles.length, activeVehicles: this.vehicles.filter(v => v.status === 'parked').length };
+  // ✅ BACKWARD COMPATIBILITY
+  dashboardStats = this.stats;
+
+  // ✅ EXTRA COMPUTED
+  todayRevenue = computed(() =>
+    this.records().reduce((sum, r) => sum + Number(r.charge || 0), 0)
+  );
+
+  occupancyPercent = computed(() => {
+    const s = this.stats();
+    return s.totalSlots ? Math.round((s.occupiedSlots / s.totalSlots) * 100) : 0;
+  });
+
+  availableSlotsCount = computed(() =>
+    this.slots().filter(s => s.status === 'available').length
+  );
+
+  occupiedSlotsCount = computed(() =>
+    this.slots().filter(s => s.status === 'occupied').length
+  );
+
+  reservedSlotsCount = computed(() =>
+    this.slots().filter(s => s.status === 'reserved').length
+  );
+
+  maintenanceSlotsCount = computed(() =>
+    this.slots().filter(s => s.status === 'maintenance').length
+  );
+
+  parkedVehicles = computed(() =>
+    this.vehicles().filter(v => v.status === 'parked')
+  );
+
+  // ✅ REPORTS FIXED (revenue + count)
+  revenueByType = computed(() => {
+    const map: Record<string, { type: string; revenue: number; count: number }> = {};
+
+    this.records().forEach(r => {
+      if (!map[r.vehicleType]) {
+        map[r.vehicleType] = {
+          type: r.vehicleType,
+          revenue: 0,
+          count: 0
+        };
+      }
+
+      map[r.vehicleType].revenue += Number(r.charge || 0);
+      map[r.vehicleType].count += 1;
+    });
+
+    return Object.values(map);
+  });
+
+  // ✅ EFFECT (debug / reactive side effect)
+  constructor() {
+    effect(() => {
+      console.log('Vehicles:', this.vehicles());
+      console.log('Slots:', this.slots());
+    });
   }
 
-  private isToday(date: Date): boolean {
-    const today = new Date();
-    return date.getDate() === today.getDate() && date.getMonth() === today.getMonth() && date.getFullYear() === today.getFullYear();
-  }
-
+  // ✅ ADD VEHICLE
   addVehicle(vehicle: Omit<Vehicle, 'id' | 'entryTime' | 'status'>): string {
-    const slot = this.slots.find(s => s.type === vehicle.vehicleType && s.status === 'available');
-    if (!slot) return 'No slot available for this vehicle type';
+    const slots = this.slots();
+    const vehicles = this.vehicles();
+
+    const slot = slots.find(s => s.type === vehicle.vehicleType && s.status === 'available');
+    if (!slot) return 'No slot available';
+
     const id = 'v' + Date.now();
-    const newVehicle: Vehicle = { ...vehicle, id, entryTime: new Date(), slotId: slot.id, status: 'parked' };
-    this.vehicles.push(newVehicle);
-    slot.status = 'occupied';
-    slot.vehicleId = id;
-    this.vehiclesSubject.next([...this.vehicles]);
-    this.slotsSubject.next([...this.slots]);
+
+    const newVehicle: Vehicle = {
+      ...vehicle,
+      id,
+      entryTime: new Date(),
+      status: 'parked',
+      slotId: slot.id
+    };
+
+    this.vehicles.set([...vehicles, newVehicle]);
+
+    this.slots.set(
+      slots.map(s =>
+        s.id === slot.id ? { ...s, status: 'occupied', vehicleId: id } : s
+      )
+    );
+
     return 'success';
   }
 
+  // ✅ CHECKOUT VEHICLE
   checkoutVehicle(vehicleId: string): number {
-    const vehicle = this.vehicles.find(v => v.id === vehicleId);
+    const vehicles = this.vehicles();
+    const slots = this.slots();
+
+    const vehicle = vehicles.find(v => v.id === vehicleId);
     if (!vehicle || !vehicle.entryTime) return 0;
+
     const exitTime = new Date();
     const durationMs = exitTime.getTime() - new Date(vehicle.entryTime).getTime();
     const durationMin = Math.ceil(durationMs / 60000);
-    const rate = this.RATE_PER_HOUR[vehicle.vehicleType] || 50;
+
+    const rate = 50;
     const charge = Math.ceil(durationMin / 60) * rate;
-    const record: ParkingRecord = { id: 'r' + Date.now(), vehicleId, slotId: vehicle.slotId!, plateNumber: vehicle.plateNumber, ownerName: vehicle.ownerName, vehicleType: vehicle.vehicleType, slotNumber: this.slots.find(s => s.id === vehicle.slotId)?.slotNumber || '', entryTime: vehicle.entryTime, exitTime, duration: durationMin, charge };
-    this.records.push(record);
-    vehicle.status = 'exited';
-    vehicle.exitTime = exitTime;
-    const slot = this.slots.find(s => s.id === vehicle.slotId);
-    if (slot) { slot.status = 'available'; delete slot.vehicleId; }
-    this.vehiclesSubject.next([...this.vehicles]);
-    this.slotsSubject.next([...this.slots]);
-    this.recordsSubject.next([...this.records]);
+
+    const record: ParkingRecord = {
+      id: 'r' + Date.now(),
+      vehicleId,
+      slotId: vehicle.slotId!,
+      plateNumber: vehicle.plateNumber,
+      ownerName: vehicle.ownerName,
+      vehicleType: vehicle.vehicleType,
+      slotNumber: '',
+      entryTime: vehicle.entryTime,
+      exitTime,
+      duration: durationMin,
+      charge
+    };
+
+    this.records.set([...this.records(), record]);
+
+    this.vehicles.set(
+      vehicles.map(v =>
+        v.id === vehicleId
+          ? { ...v, status: 'exited' as 'exited', exitTime }
+          : v
+      )
+    );
+
+    this.slots.set(
+      slots.map(s =>
+        s.id === vehicle.slotId
+          ? { ...s, status: 'available', vehicleId: undefined }
+          : s
+      )
+    );
+
     return charge;
   }
 
-  updateSlotStatus(slotId: string, status: ParkingSlot['status']): void {
-    const slot = this.slots.find(s => s.id === slotId);
-    if (slot && slot.status !== 'occupied') { slot.status = status; this.slotsSubject.next([...this.slots]); }
+  // ✅ UPDATE SLOT
+  updateSlotStatus(slotId: string, status: any) {
+    this.slots.set(
+      this.slots().map(s =>
+        s.id === slotId && s.status !== 'occupied'
+          ? { ...s, status }
+          : s
+      )
+    );
   }
 
-  deleteVehicle(vehicleId: string): void {
-    this.vehicles = this.vehicles.filter(v => v.id !== vehicleId);
-    this.vehiclesSubject.next([...this.vehicles]);
+  // ✅ DELETE VEHICLE
+  deleteVehicle(id: string) {
+    this.vehicles.set(this.vehicles().filter(v => v.id !== id));
+  }
+
+  // ✅ GROUP BY FLOOR
+  getSlotsByFloor(slots = this.slots()) {
+    const floors: Record<string, ParkingSlot[]> = {};
+    slots.forEach(s => {
+      if (!floors[s.floor]) floors[s.floor] = [];
+      floors[s.floor].push(s);
+    });
+    return Object.entries(floors).map(([floor, slots]) => ({ floor, slots }));
+  }
+
+  // ✅ DURATION
+  getDuration(entry: Date): string {
+    const mins = Math.floor((Date.now() - new Date(entry).getTime()) / 60000);
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    return h > 0 ? `${h}h ${m}m` : `${m}m`;
   }
 }

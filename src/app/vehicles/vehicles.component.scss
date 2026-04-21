@@ -8,7 +8,7 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
 
   h1 {
     font-size: 1.8rem;
@@ -19,6 +19,40 @@
   p {
     color: #666;
     margin: 0.25rem 0 0;
+  }
+}
+
+.summary-badges {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+
+  span {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.82rem;
+    font-weight: 600;
+  }
+
+  .badge-info {
+    background: #e3f2fd;
+    color: #1565c0;
+  }
+
+  .badge-green {
+    background: #e8f5e9;
+    color: #2e7d32;
+  }
+
+  .badge-red {
+    background: #ffebee;
+    color: #c62828;
+  }
+
+  .badge-blue {
+    background: #ede7f6;
+    color: #4527a0;
   }
 }
 
@@ -46,13 +80,14 @@
     background: #fff;
   }
 
-  .count-badge {
-    background: #e3f2fd;
-    color: #1565c0;
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-size: 0.85rem;
-    font-weight: 600;
+  .btn-clear {
+    background: #ffebee;
+    color: #c62828;
+    border: none;
+    padding: 0.55rem 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.9rem;
   }
 }
 
@@ -304,7 +339,6 @@
     background: #fff8e1;
     margin: 0.5rem -1.5rem -1.5rem;
     padding: 0.75rem 1.5rem;
-    border-radius: 0 0 0 0;
 
     strong {
       font-size: 1.3rem;

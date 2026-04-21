@@ -1,32 +1,51 @@
+<!-- ============================================================
+  VEHICLES TEMPLATE — Signal bindings
+  
+  Signal read karna = function call ()
+  Signal write karna = signal.set() ya signal.update()
+  
+  [(ngModel)] ki jagah: (input)="signal.set($event.target.value)"
+  ============================================================ -->
 <div class="vehicles-page">
   <div class="page-header">
     <div>
       <h1>🚗 Vehicle Management</h1>
-      <p>Manage all parked vehicles</p>
+      <!-- <p>Manage all parked vehicles — Signals powered</p> -->
     </div>
     <button class="btn-primary" (click)="openAddModal()">+ Add Vehicle</button>
   </div>
 
-  <!-- Filters -->
+  <!-- Summary badges — computed signals -->
+  <div class="summary-badges">
+    <span class="badge-info">Total: {{ ps.vehicles().length }}</span>
+    <span class="badge-green">Parked: {{ parkedCount() }}</span>
+    <span class="badge-red">Exited: {{ exitedCount() }}</span>
+    <span class="badge-blue">Filtered: {{ filteredVehicles().length }}</span>
+  </div>
+
+  <!-- Filters — signal.set() on change -->
   <div class="filters-bar">
-    <input class="search-input" type="text" placeholder="🔍 Search by plate or owner..." [(ngModel)]="searchTerm"
-      (input)="applyFilters()">
-    <select [(ngModel)]="filterStatus" (change)="applyFilters()">
+    <input class="search-input" type="text" placeholder="🔍 Search by plate or owner..." [value]="searchTerm()"
+      (input)="searchTerm.set($any($event.target).value)">
+
+    <select [value]="filterStatus()" (change)="filterStatus.set($any($event.target).value)">
       <option value="all">All Status</option>
       <option value="parked">Parked</option>
       <option value="exited">Exited</option>
     </select>
-    <select [(ngModel)]="filterType" (change)="applyFilters()">
+
+    <select [value]="filterType()" (change)="filterType.set($any($event.target).value)">
       <option value="all">All Types</option>
       <option value="Car">Car</option>
       <option value="Bike">Bike</option>
       <option value="Truck">Truck</option>
       <option value="Bus">Bus</option>
     </select>
-    <span class="count-badge">{{ filteredVehicles.length }} records</span>
+
+    <button class="btn-clear" (click)="clearFilters()">✕ Clear</button>
   </div>
 
-  <!-- Table -->
+  <!-- Table — filteredVehicles() computed signal + trackBy -->
   <div class="table-card">
     <div class="table-wrapper">
       <table class="data-table">
@@ -45,26 +64,27 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let v of filteredVehicles; let i = index">
+          <!-- trackBy: trackByVehicleId — only changed rows re-render -->
+          <tr *ngFor="let v of filteredVehicles(); let i = index; trackBy: trackByVehicleId">
             <td class="row-num">{{ i + 1 }}</td>
             <td><span class="plate">{{ v.plateNumber }}</span></td>
             <td>{{ v.ownerName }}</td>
             <td><span class="badge" [class]="v.vehicleType.toLowerCase()">{{ v.vehicleType }}</span></td>
             <td>{{ v.contactNumber }}</td>
             <td>{{ v.entryTime ? (v.entryTime | date:'dd MMM, h:mm a') : '-' }}</td>
-            <td>{{ v.status === 'parked' && v.entryTime ? getDuration(v.entryTime) : '-' }}</td>
+            <td>{{ v.status === 'parked' && v.entryTime ? ps.getDuration(v.entryTime) : '-' }}</td>
             <td>{{ v.slotId || '-' }}</td>
             <td>
-              <span class="status-badge" [class.parked]="v.status==='parked'" [class.exited]="v.status==='exited'">
+              <span class="status-badge" [class.parked]="v.status === 'parked'" [class.exited]="v.status === 'exited'">
                 {{ v.status === 'parked' ? '🟢 Parked' : '🔴 Exited' }}
               </span>
             </td>
             <td class="actions">
-              <button class="btn-checkout" *ngIf="v.status==='parked'" (click)="openCheckout(v)">Checkout</button>
+              <button class="btn-checkout" *ngIf="v.status === 'parked'" (click)="openCheckout(v)">Checkout</button>
               <button class="btn-delete" (click)="deleteVehicle(v.id)">🗑</button>
             </td>
           </tr>
-          <tr *ngIf="filteredVehicles.length === 0">
+          <tr *ngIf="filteredVehicles().length === 0">
             <td colspan="10" class="no-data">No vehicles found</td>
           </tr>
         </tbody>
@@ -72,25 +92,29 @@
     </div>
   </div>
 
-  <!-- Add Vehicle Modal -->
-  <div class="modal-overlay" *ngIf="showModal" (click)="showModal=false">
+  <!-- Add Vehicle Modal — showModal() signal -->
+  <div class="modal-overlay" *ngIf="showModal()" (click)="showModal.set(false)">
     <div class="modal" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h2>Add New Vehicle</h2>
-        <button class="close-btn" (click)="showModal=false">✕</button>
+        <button class="close-btn" (click)="showModal.set(false)">✕</button>
       </div>
       <div class="modal-body">
         <div class="form-group">
           <label>Plate Number *</label>
-          <input type="text" [(ngModel)]="newVehicle.plateNumber" placeholder="e.g. UP32AB1234" class="form-input">
+          <input type="text" [value]="newVehicle().plateNumber"
+            (input)="updateField('plateNumber', $any($event.target).value)" placeholder="e.g. UP32AB1234"
+            class="form-input">
         </div>
         <div class="form-group">
           <label>Owner Name *</label>
-          <input type="text" [(ngModel)]="newVehicle.ownerName" placeholder="Full name" class="form-input">
+          <input type="text" [value]="newVehicle().ownerName"
+            (input)="updateField('ownerName', $any($event.target).value)" placeholder="Full name" class="form-input">
         </div>
         <div class="form-group">
           <label>Vehicle Type</label>
-          <select [(ngModel)]="newVehicle.vehicleType" class="form-input">
+          <select [value]="newVehicle().vehicleType" (change)="updateField('vehicleType', $any($event.target).value)"
+            class="form-input">
             <option>Car</option>
             <option>Bike</option>
             <option>Truck</option>
@@ -99,42 +123,46 @@
         </div>
         <div class="form-group">
           <label>Contact Number</label>
-          <input type="text" [(ngModel)]="newVehicle.contactNumber" placeholder="10-digit mobile" class="form-input">
+          <input type="text" [value]="newVehicle().contactNumber"
+            (input)="updateField('contactNumber', $any($event.target).value)" placeholder="10-digit mobile"
+            class="form-input">
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn-secondary" (click)="showModal=false">Cancel</button>
+        <button class="btn-secondary" (click)="showModal.set(false)">Cancel</button>
         <button class="btn-primary" (click)="addVehicle()">Add Vehicle</button>
       </div>
     </div>
   </div>
 
-  <!-- Checkout Modal -->
-  <div class="modal-overlay" *ngIf="showCheckoutModal" (click)="showCheckoutModal=false">
+  <!-- Checkout Modal — showCheckoutModal() signal -->
+  <div class="modal-overlay" *ngIf="showCheckoutModal()" (click)="showCheckoutModal.set(false)">
     <div class="modal checkout-modal" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h2>Vehicle Checkout</h2>
-        <button class="close-btn" (click)="showCheckoutModal=false">✕</button>
+        <button class="close-btn" (click)="showCheckoutModal.set(false)">✕</button>
       </div>
-      <div class="modal-body" *ngIf="selectedVehicle">
+      <div class="modal-body" *ngIf="selectedVehicle() as v">
         <div class="checkout-info">
-          <div class="info-row"><span>Plate</span><strong class="plate">{{ selectedVehicle.plateNumber }}</strong></div>
-          <div class="info-row"><span>Owner</span><strong>{{ selectedVehicle.ownerName }}</strong></div>
-          <div class="info-row"><span>Type</span><strong>{{ selectedVehicle.vehicleType }}</strong></div>
-          <div class="info-row"><span>Entry Time</span><strong>{{ selectedVehicle.entryTime | date:'dd MMM, h:mm a'
-              }}</strong></div>
-          <div class="info-row"><span>Duration</span><strong>{{ getDuration(selectedVehicle.entryTime!) }}</strong>
+          <div class="info-row"><span>Plate</span><strong class="plate">{{ v.plateNumber }}</strong></div>
+          <div class="info-row"><span>Owner</span><strong>{{ v.ownerName }}</strong></div>
+          <div class="info-row"><span>Type</span><strong>{{ v.vehicleType }}</strong></div>
+          <div class="info-row"><span>Entry Time</span><strong>{{ v.entryTime | date:'dd MMM, h:mm a' }}</strong></div>
+          <div class="info-row"><span>Duration</span><strong>{{ ps.getDuration(v.entryTime!) }}</strong></div>
+          <div class="info-row charge-row">
+            <span>Total Charge</span>
+            <!-- checkoutCharge() signal directly in template -->
+            <strong>₹{{ checkoutCharge() }}</strong>
           </div>
-          <div class="info-row charge-row"><span>Total Charge</span><strong>₹{{ checkoutCharge }}</strong></div>
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn-secondary" (click)="showCheckoutModal=false">Cancel</button>
+        <button class="btn-secondary" (click)="showCheckoutModal.set(false)">Cancel</button>
         <button class="btn-primary" (click)="confirmCheckout()">Confirm Checkout</button>
       </div>
     </div>
   </div>
 
-  <!-- Toast -->
-  <div class="toast" *ngIf="toast">{{ toast }}</div>
+  <!-- Toast — toast() signal -->
+  <div class="toast" *ngIf="toast()">{{ toast() }}</div>
 </div>

@@ -1,57 +1,42 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, computed, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { Subscription } from 'rxjs';
 import { ParkingService } from '../shared/services/parking.service';
-import { Vehicle, ParkingSlot, DashboardStats } from '../shared/models/models';
+import { ParkingSlot } from '../shared/models/models';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
   imports: [CommonModule, RouterLink],
   templateUrl: './dashboard.component.html',
-  styleUrl: './dashboard.component.scss'
+  styleUrl: './dashboard.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class DashboardComponent implements OnInit, OnDestroy {
-  stats!: DashboardStats;
-  recentVehicles: Vehicle[] = [];
-  slots: ParkingSlot[] = [];
-  private subs: Subscription[] = [];
+export class DashboardComponent {
 
-  constructor(private parkingService: ParkingService) { }
+  protected readonly ps = inject(ParkingService);
 
-  ngOnInit(): void {
-    this.stats = this.parkingService.getStats();
-    this.subs.push(
-      this.parkingService.getVehicles().subscribe(v => {
-        this.recentVehicles = v.filter(x => x.status === 'parked').slice(-5).reverse();
-        this.stats = this.parkingService.getStats();
-      }),
-      this.parkingService.getSlots().subscribe(s => {
-        this.slots = s;
-        this.stats = this.parkingService.getStats();
-      })
-    );
+
+  readonly recentParked = computed(() =>
+    this.ps.parkedVehicles().slice(-5).reverse()
+  );
+
+  readonly slotsByFloor = computed(() =>
+    this.ps.getSlotsByFloor()
+  );
+
+  getTypeIcon(type: string): string {
+    const icons: Record<string, string> = {
+      Car: '🚗', Bike: '🏍', Truck: '🚛', Bus: '🚌'
+    };
+    return icons[type] || '🚗';
   }
 
-  getOccupancyPercent(): number {
-    return this.stats.totalSlots ? Math.round((this.stats.occupiedSlots / this.stats.totalSlots) * 100) : 0;
+  trackBySlotId(_: number, slot: ParkingSlot): string {
+    return slot.id;
   }
 
-  getDuration(entry: Date): string {
-    const mins = Math.floor((Date.now() - new Date(entry).getTime()) / 60000);
-    const h = Math.floor(mins / 60); const m = mins % 60;
-    return h > 0 ? `${h}h ${m}m` : `${m}m`;
+  trackByVehicleId(_: number, v: any): string {
+    return v.id;
   }
-
-  getSlotsByFloor() {
-    const floors: Record<string, ParkingSlot[]> = {};
-    this.slots.forEach(s => {
-      if (!floors[s.floor]) floors[s.floor] = [];
-      floors[s.floor].push(s);
-    });
-    return Object.entries(floors).map(([floor, slots]) => ({ floor, slots }));
-  }
-
-  ngOnDestroy(): void { this.subs.forEach(s => s.unsubscribe()); }
 }

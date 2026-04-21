@@ -2,46 +2,48 @@
   <div class="page-header">
     <div>
       <h1>📋 Reports</h1>
-      <p>Parking history and revenue analytics</p>
+      <!-- <p>Revenue analytics — computed() signals powered</p> -->
     </div>
     <button class="btn-print" (click)="printReport()">🖨 Print Report</button>
   </div>
 
+  <!-- Stats — computed signals auto-update with filters -->
   <div class="stats-row">
     <div class="stat-card">
       <div class="stat-icon">💰</div>
       <div class="stat-detail">
-        <div class="stat-val">₹{{ totalRevenue }}</div>
+        <div class="stat-val">₹{{ totalRevenue() }}</div>
         <div class="stat-lbl">Total Revenue</div>
       </div>
     </div>
     <div class="stat-card">
       <div class="stat-icon">🚗</div>
       <div class="stat-detail">
-        <div class="stat-val">{{ totalVehicles }}</div>
-        <div class="stat-lbl">Total Checkouts</div>
+        <div class="stat-val">{{ filteredRecords().length }}</div>
+        <div class="stat-lbl">Total Records</div>
       </div>
     </div>
     <div class="stat-card">
       <div class="stat-icon">⏱</div>
       <div class="stat-detail">
-        <div class="stat-val">{{ formatDuration(avgDuration) }}</div>
+        <div class="stat-val">{{ formatDuration(avgDuration()) }}</div>
         <div class="stat-lbl">Avg Duration</div>
       </div>
     </div>
     <div class="stat-card">
       <div class="stat-icon">🏆</div>
       <div class="stat-detail">
-        <div class="stat-val">₹{{ maxRevenue }}</div>
+        <div class="stat-val">₹{{ maxCharge() }}</div>
         <div class="stat-lbl">Max Single Charge</div>
       </div>
     </div>
   </div>
 
-  <div class="revenue-section" *ngIf="getTypeRevenue().length > 0">
+  <!-- Revenue by Type — service computed signal -->
+  <div class="revenue-section" *ngIf="ps.revenueByType().length > 0">
     <h2>Revenue by Vehicle Type</h2>
     <div class="type-cards">
-      <div class="type-card" *ngFor="let t of getTypeRevenue()">
+      <div class="type-card" *ngFor="let t of ps.revenueByType()">
         <div class="type-icon">{{ t.type === 'Car' ? '🚗' : t.type === 'Bike' ? '🏍' : t.type === 'Truck' ? '🚛' : '🚌'
           }}</div>
         <div class="type-name">{{ t.type }}</div>
@@ -51,39 +53,41 @@
     </div>
   </div>
 
+  <!-- Filters -->
   <div class="filters-bar">
-    <input class="search-input" type="text" placeholder="🔍 Search plate / owner..." [(ngModel)]="searchTerm"
-      (input)="applyFilters()">
-    <select [(ngModel)]="filterType" (change)="applyFilters()">
+    <input class="search-input" type="text" placeholder="🔍 Search plate / owner..." [value]="searchTerm()"
+      (input)="searchTerm.set($any($event.target).value)">
+    <select [value]="filterType()" (change)="filterType.set($any($event.target).value)">
       <option value="all">All Types</option>
       <option value="Car">Car</option>
       <option value="Bike">Bike</option>
       <option value="Truck">Truck</option>
       <option value="Bus">Bus</option>
     </select>
-    <input type="date" [(ngModel)]="filterDate" (change)="applyFilters()" class="date-input">
+    <input type="date" class="date-input" [value]="filterDate()" (change)="filterDate.set($any($event.target).value)">
     <button class="btn-clear" (click)="clearFilters()">✕ Clear</button>
-    <span class="count-badge">{{ filteredRecords.length }} records</span>
+    <span class="count-badge">{{ filteredRecords().length }} records</span>
   </div>
 
+  <!-- Records Table — filteredRecords() computed signal + trackBy -->
   <div class="table-card">
     <div class="table-wrapper">
       <table class="data-table">
         <thead>
           <tr>
             <th>#</th>
-            <th>Plate Number</th>
-            <th>Owner Name</th>
+            <th>Plate</th>
+            <th>Owner</th>
             <th>Type</th>
             <th>Slot</th>
-            <th>Entry Time</th>
-            <th>Exit Time</th>
+            <th>Entry</th>
+            <th>Exit</th>
             <th>Duration</th>
             <th>Charge</th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let r of filteredRecords; let i = index">
+          <tr *ngFor="let r of filteredRecords(); let i = index; trackBy: trackByRecordId">
             <td class="row-num">{{ i + 1 }}</td>
             <td><span class="plate">{{ r.plateNumber }}</span></td>
             <td>{{ r.ownerName }}</td>
@@ -94,7 +98,7 @@
             <td>{{ r.duration ? formatDuration(r.duration) : '-' }}</td>
             <td class="charge">{{ r.charge ? '₹' + r.charge : '-' }}</td>
           </tr>
-          <tr *ngIf="filteredRecords.length === 0">
+          <tr *ngIf="filteredRecords().length === 0">
             <td colspan="9" class="no-data">
               <div class="empty-state">
                 <div class="empty-icon">📭</div>

@@ -1,50 +1,51 @@
 <div class="dashboard">
   <div class="page-header">
     <h1>📊 Dashboard</h1>
-    <p>Real-time parking overview</p>
+    <!-- <p>Real-time parking overview — powered by Angular Signals</p> -->
   </div>
 
-  <!-- Stats Cards -->
-  <div class="stats-grid" *ngIf="stats">
+  <!-- Stats Cards — reads dashboardStats computed signal -->
+  <div class="stats-grid">
     <div class="stat-card blue">
       <div class="stat-icon">🏢</div>
       <div class="stat-info">
-        <div class="stat-value">{{ stats.totalSlots }}</div>
+        <div class="stat-value">{{ ps.dashboardStats().totalSlots }}</div>
         <div class="stat-label">Total Slots</div>
       </div>
     </div>
     <div class="stat-card green">
       <div class="stat-icon">✅</div>
       <div class="stat-info">
-        <div class="stat-value">{{ stats.availableSlots }}</div>
+        <div class="stat-value">{{ ps.dashboardStats().availableSlots }}</div>
         <div class="stat-label">Available</div>
       </div>
     </div>
     <div class="stat-card red">
       <div class="stat-icon">🚗</div>
       <div class="stat-info">
-        <div class="stat-value">{{ stats.occupiedSlots }}</div>
+        <div class="stat-value">{{ ps.dashboardStats().occupiedSlots }}</div>
         <div class="stat-label">Occupied</div>
       </div>
     </div>
     <div class="stat-card orange">
       <div class="stat-icon">💰</div>
       <div class="stat-info">
-        <div class="stat-value">₹{{ stats.todayRevenue }}</div>
+        <div class="stat-value">₹{{ ps.dashboardStats().todayRevenue }}</div>
         <div class="stat-label">Today's Revenue</div>
       </div>
     </div>
     <div class="stat-card purple">
       <div class="stat-icon">🚘</div>
       <div class="stat-info">
-        <div class="stat-value">{{ stats.activeVehicles }}</div>
+        <div class="stat-value">{{ ps.dashboardStats().activeVehicles }}</div>
         <div class="stat-label">Active Vehicles</div>
       </div>
     </div>
     <div class="stat-card teal">
       <div class="stat-icon">📈</div>
       <div class="stat-info">
-        <div class="stat-value">{{ getOccupancyPercent() }}%</div>
+        <!-- occupancyPercent() — computed signal directly in template -->
+        <div class="stat-value">{{ ps.occupancyPercent() }}%</div>
         <div class="stat-label">Occupancy Rate</div>
       </div>
     </div>
@@ -54,28 +55,29 @@
   <div class="occupancy-section">
     <h2>Occupancy Overview</h2>
     <div class="occupancy-bar">
-      <div class="bar-fill" [style.width.%]="getOccupancyPercent()" [class.low]="getOccupancyPercent()<50"
-        [class.medium]="getOccupancyPercent()>=50 && getOccupancyPercent()<80" [class.high]="getOccupancyPercent()>=80">
-        <span>{{ getOccupancyPercent() }}%</span>
+      <div class="bar-fill" [style.width.%]="ps.occupancyPercent()" [class.low]="ps.occupancyPercent() < 50"
+        [class.medium]="ps.occupancyPercent() >= 50 && ps.occupancyPercent() < 80"
+        [class.high]="ps.occupancyPercent() >= 80">
+        <span>{{ ps.occupancyPercent() }}%</span>
       </div>
     </div>
     <div class="bar-legend">
-      <span class="legend-item available">■ Available ({{ stats.availableSlots }})</span>
-      <span class="legend-item occupied">■ Occupied ({{ stats.occupiedSlots }})</span>
+      <span class="legend-item available">■ Available ({{ ps.availableSlotsCount() }})</span>
+      <span class="legend-item occupied">■ Occupied ({{ ps.occupiedSlotsCount() }})</span>
     </div>
   </div>
 
-  <!-- Slot Map by Floor -->
+  <!-- Slot Map — slotsByFloor() local computed signal
+       trackBy: bina re-render kiye sirf changed slots update honge -->
   <div class="slot-map-section">
     <h2>Parking Slot Map</h2>
-    <div class="floor-group" *ngFor="let floorData of getSlotsByFloor()">
+    <div class="floor-group" *ngFor="let floorData of slotsByFloor()">
       <h3>{{ floorData.floor }}</h3>
       <div class="slots-grid">
-        <div class="slot-cell" *ngFor="let slot of floorData.slots" [class]="slot.status"
+        <div class="slot-cell" *ngFor="let slot of floorData.slots; trackBy: trackBySlotId" [class]="slot.status"
           [title]="slot.slotNumber + ' - ' + slot.type + ' - ' + slot.status">
           <span class="slot-num">{{ slot.slotNumber }}</span>
-          <span class="slot-type-icon">{{ slot.type === 'Car' ? '🚗' : slot.type === 'Bike' ? '🏍' : slot.type ===
-            'Truck' ? '🚛' : '🚌' }}</span>
+          <span class="slot-type-icon">{{ getTypeIcon(slot.type) }}</span>
         </div>
       </div>
     </div>
@@ -87,7 +89,8 @@
     </div>
   </div>
 
-  <!-- Currently Parked -->
+  <!-- Recently Parked — recentParked() computed signal
+       trackBy: vehicle ID se track karo — efficient rendering -->
   <div class="recent-section">
     <div class="section-header">
       <h2>Currently Parked Vehicles</h2>
@@ -105,14 +108,15 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let v of recentVehicles">
+          <!-- trackBy: trackByVehicleId → performance optimization -->
+          <tr *ngFor="let v of recentParked(); trackBy: trackByVehicleId">
             <td><span class="plate">{{ v.plateNumber }}</span></td>
             <td>{{ v.ownerName }}</td>
             <td><span class="badge" [class]="v.vehicleType.toLowerCase()">{{ v.vehicleType }}</span></td>
             <td>{{ v.slotId }}</td>
-            <td class="duration">{{ getDuration(v.entryTime!) }}</td>
+            <td class="duration">{{ ps.getDuration(v.entryTime!) }}</td>
           </tr>
-          <tr *ngIf="recentVehicles.length === 0">
+          <tr *ngIf="recentParked().length === 0">
             <td colspan="5" class="no-data">No vehicles currently parked</td>
           </tr>
         </tbody>
